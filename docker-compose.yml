@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tripgo-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: tripgo
+      POSTGRES_USER: tripgo
+      POSTGRES_PASSWORD: tripgo
+    volumes:
+      - tripgo_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tripgo -d tripgo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  tripgo_pg_data:

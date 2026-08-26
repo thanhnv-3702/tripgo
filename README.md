@@ -15,7 +15,7 @@ Monorepo cho Mock Project TripGo.
 
 ## Quick start
 
-### 1. Database (khuyến nghị Postgres)
+### 1. Database
 
 Cần Docker:
 
@@ -23,7 +23,7 @@ Cần Docker:
 docker compose up -d
 ```
 
-Nếu chưa có Docker: BE mặc định dùng **H2 in-memory** (dev nhanh, không cần Postgres).
+BE mặc định dùng **H2 in-memory**
 
 ### 2. Backend
 
@@ -49,7 +49,7 @@ App: http://localhost:3000
 
 ## Roadmap tickets
 
-Xem Project #35 — `[T01]`…`[T13]` (Backlog). Thứ tự gợi ý: T01 docs → T02 FE layout → T03–T06 BE API → T07+ FE features.
+Xem Project #35 — `[T01]`…`[T13]` (Backlog). T01 docs → T02 FE layout → T03–T06 BE API → T07+ FE features.
 
 ## License
 

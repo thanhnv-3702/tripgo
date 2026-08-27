@@ -22,4 +22,8 @@ public class ApiException extends RuntimeException {
     public static ApiException notFound(String message) {
         return new ApiException("NOT_FOUND", message, 404);
     }
+
+    public static ApiException unauthorized() {
+        return new ApiException("UNAUTHORIZED", "Yêu cầu đăng nhập", 401);
+    }
 }

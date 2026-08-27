@@ -24,6 +24,9 @@ server:
 app:
   cors:
     allowed-origins: http://localhost:3000
+  jwt:
+    secret: tripgo-dev-secret-change-in-production-min-32-chars
+    expiration-ms: 86400000
 
 ---
 # Use with: ./mvnw spring-boot:run -Dspring-boot.run.profiles=postgres

@@ -42,6 +42,23 @@ public class TourController {
         return tourService.getBySlug(slug);
     }
 
+    @GetMapping("/tours/{id}/reviews")
+    public TourDtos.ReviewPageResponse reviews(
+        @PathVariable String id,
+        @RequestParam(required = false, defaultValue = "1") int page,
+        @RequestParam(required = false, defaultValue = "10") int limit
+    ) {
+        return tourService.getReviews(id, page, limit);
+    }
+
+    @GetMapping("/tours/{id}/availability")
+    public List<TourDtos.AvailabilityItem> availability(
+        @PathVariable String id,
+        @RequestParam(required = false) String month
+    ) {
+        return tourService.getAvailability(id, month);
+    }
+
     @GetMapping("/destinations")
     public List<TourDtos.DestinationItem> destinations() {
         return tourService.listDestinations();

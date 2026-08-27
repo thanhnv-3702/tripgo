@@ -73,6 +73,35 @@ public final class TourDtos {
     ) {
     }
 
+    public record ReviewUserBrief(
+        String name,
+        String avatar
+    ) {
+    }
+
+    public record ReviewItem(
+        String id,
+        ReviewUserBrief user,
+        int rating,
+        String comment,
+        String createdAt
+    ) {
+    }
+
+    public record ReviewPageResponse(
+        List<ReviewItem> data,
+        long total,
+        double avgRating
+    ) {
+    }
+
+    public record AvailabilityItem(
+        String date,
+        int slotsLeft,
+        long price
+    ) {
+    }
+
     public static long money(BigDecimal value) {
         return value == null ? 0L : value.longValue();
     }

@@ -9,15 +9,21 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tripgo.api.domain.entity.Destination;
+import com.tripgo.api.domain.entity.Review;
 import com.tripgo.api.domain.entity.Tour;
+import com.tripgo.api.domain.entity.User;
 import com.tripgo.api.domain.enums.TourCategory;
+import com.tripgo.api.domain.enums.UserRole;
 import com.tripgo.api.domain.model.ItineraryDay;
 import com.tripgo.api.repository.DestinationRepository;
+import com.tripgo.api.repository.ReviewRepository;
 import com.tripgo.api.repository.TourRepository;
+import com.tripgo.api.repository.UserRepository;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -26,10 +32,22 @@ public class DataSeeder implements CommandLineRunner {
 
     private final DestinationRepository destinationRepository;
     private final TourRepository tourRepository;
+    private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DataSeeder(DestinationRepository destinationRepository, TourRepository tourRepository) {
+    public DataSeeder(
+        DestinationRepository destinationRepository,
+        TourRepository tourRepository,
+        UserRepository userRepository,
+        ReviewRepository reviewRepository,
+        PasswordEncoder passwordEncoder
+    ) {
         this.destinationRepository = destinationRepository;
         this.tourRepository = tourRepository;
+        this.userRepository = userRepository;
+        this.reviewRepository = reviewRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -41,8 +59,11 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         List<Destination> destinations = seedDestinations();
-        int tours = seedTours(destinations);
-        log.info("Seeded {} destinations and {} tours", destinations.size(), tours);
+        List<Tour> tours = seedTours(destinations);
+        List<User> reviewers = seedUsers();
+        int reviews = seedReviews(tours, reviewers);
+        log.info("Seeded {} destinations, {} tours, {} users, {} reviews",
+            destinations.size(), tours.size(), reviewers.size(), reviews);
     }
 
     private List<Destination> seedDestinations() {
@@ -69,7 +90,7 @@ public class DataSeeder implements CommandLineRunner {
         return saved;
     }
 
-    private int seedTours(List<Destination> destinations) {
+    private List<Tour> seedTours(List<Destination> destinations) {
         Object[][] templates = {
             {"Biển & Nghỉ dưỡng", "beach-resort", TourCategory.BEACH, 3, 4_490_000L},
             {"Khám phá thành phố", "city-explore", TourCategory.CITY, 2, 2_990_000L},
@@ -78,11 +99,11 @@ public class DataSeeder implements CommandLineRunner {
             {"Du thuyền & đảo", "island-cruise", TourCategory.CRUISE, 2, 6_490_000L}
         };
 
-        int count = 0;
+        List<Tour> saved = new ArrayList<>();
         int index = 1;
         for (Destination destination : destinations) {
             for (Object[] template : templates) {
-                tourRepository.save(buildTour(
+                saved.add(tourRepository.save(buildTour(
                     destination,
                     (String) template[0],
                     (String) template[1],
@@ -90,9 +111,67 @@ public class DataSeeder implements CommandLineRunner {
                     (Integer) template[3],
                     (Long) template[4],
                     index++
-                ));
+                )));
+            }
+        }
+        return saved;
+    }
+
+    private List<User> seedUsers() {
+        String[][] defs = {
+            {"Nguyen An", "an@example.com", "secret123"},
+            {"Lan", "lan@example.com", "secret123"},
+            {"Minh", "minh@example.com", "secret123"},
+            {"Hoa", "hoa@example.com", "secret123"},
+            {"Tuan", "tuan@example.com", "secret123"},
+            {"Chi", "chi@example.com", "secret123"},
+            {"Dung", "dung@example.com", "secret123"},
+            {"Trang", "trang@example.com", "secret123"},
+            {"Khoa", "khoa@example.com", "secret123"},
+            {"Vy", "vy@example.com", "secret123"},
+            {"Bao", "bao@example.com", "secret123"}
+        };
+
+        List<User> saved = new ArrayList<>();
+        for (String[] def : defs) {
+            User user = new User();
+            user.setName(def[0]);
+            user.setEmail(def[1]);
+            user.setPasswordHash(passwordEncoder.encode(def[2]));
+            user.setRole(UserRole.USER);
+            saved.add(userRepository.save(user));
+        }
+        return saved;
+    }
+
+    private int seedReviews(List<Tour> tours, List<User> reviewers) {
+        String[] comments = {
+            "Tuyệt vời", "Hành trình suôn sẻ", "Hướng dẫn viên nhiệt tình",
+            "Giá hợp lý", "View đẹp", "Sẽ quay lại", "Ẩm thực ngon",
+            "Lịch trình hợp lý", "Khách sạn ổn", "Trải nghiệm đáng tiền"
+        };
+
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        int count = 0;
+        for (Tour tour : tours) {
+            int reviewCount = rnd.nextInt(5, 11);
+            double ratingSum = 0;
+            for (int i = 0; i < reviewCount; i++) {
+                User reviewer = reviewers.get(rnd.nextInt(reviewers.size()));
+                int rating = rnd.nextInt(4, 6);
+                ratingSum += rating;
+
+                Review review = new Review();
+                review.setTour(tour);
+                review.setUser(reviewer);
+                review.setRating(rating);
+                review.setComment(comments[rnd.nextInt(comments.length)]);
+                reviewRepository.save(review);
                 count++;
             }
+            tour.setReviewCount(reviewCount);
+            tour.setRating(BigDecimal.valueOf(ratingSum / reviewCount).setScale(1, RoundingMode.HALF_UP));
+            tourRepository.save(tour);
         }
         return count;
     }
@@ -121,8 +200,8 @@ public class DataSeeder implements CommandLineRunner {
         if (hasDiscount) {
             tour.setDiscountPrice(BigDecimal.valueOf(Math.round(price * 0.9)));
         }
-        tour.setRating(BigDecimal.valueOf(4.0 + rnd.nextDouble(0, 1.0)).setScale(1, RoundingMode.HALF_UP));
-        tour.setReviewCount(rnd.nextInt(20, 250));
+        tour.setRating(BigDecimal.valueOf(4.5));
+        tour.setReviewCount(0);
         tour.setThumbnail(image(destination.getSlug(), index));
         tour.setImages(List.of(
             image(destination.getSlug(), index),

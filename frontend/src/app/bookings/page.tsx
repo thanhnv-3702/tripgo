@@ -3,14 +3,14 @@ import type { Metadata } from "next";
 import { PageShell } from "@/components/layout/PageShell";
 
 export const metadata: Metadata = {
-  title: "Đăng nhập",
+  title: "Đơn của tôi",
 };
 
-export default function LoginPage() {
+export default function BookingsPage() {
   return (
     <PageShell
-      title="Đăng nhập"
-      description="Form auth (RHF + Zod) triển khai ở T10."
+      title="Đơn của tôi"
+      description="F6 — filter status + BookingCard list (Day 17)."
     />
   );
 }

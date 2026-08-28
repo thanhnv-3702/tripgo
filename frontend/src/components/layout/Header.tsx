@@ -9,8 +9,8 @@ const navItems = [
 export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-bg shadow-sm">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-lg font-bold text-white">
             T
           </span>
@@ -29,12 +29,20 @@ export function Header() {
           ))}
         </nav>
 
-        <Link
-          href="/login"
-          className="inline-flex h-10 shrink-0 items-center justify-center rounded-md bg-accent px-5 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
-        >
-          Đăng nhập
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href="/login"
+            className="inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary"
+          >
+            Đăng nhập
+          </Link>
+          <Link
+            href="/register"
+            className="inline-flex h-10 items-center justify-center rounded-md bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
+          >
+            Đăng ký
+          </Link>
+        </div>
       </div>
     </header>
   );

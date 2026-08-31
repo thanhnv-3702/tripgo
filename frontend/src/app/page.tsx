@@ -1,15 +1,36 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-import { getTours } from "@/lib/api/tours";
+import { DestinationCard } from "@/components/home/DestinationCard";
+import { HeroSearch } from "@/components/home/HeroSearch";
+import { TourCard } from "@/components/tour/TourCard";
 import { ApiClientError } from "@/lib/api/client";
+import { getDestinations, getTours } from "@/lib/api/tours";
+
+export const metadata: Metadata = {
+  title: "Khám phá tour du lịch",
+  description:
+    "TripGo — tìm và đặt tour du lịch trong nước. Điểm đến nổi bật, tour được đánh giá cao, tìm kiếm theo điểm đến và mức giá.",
+  openGraph: {
+    title: "TripGo — Khám phá tour du lịch",
+    description: "Tìm chuyến đi phù hợp — điểm đến, ngày khởi hành, mức giá.",
+  },
+};
 
 export default async function Home() {
-  let tourTotal: number | null = null;
+  let destinations: Awaited<ReturnType<typeof getDestinations>> = [];
+  let featuredTours: Awaited<ReturnType<typeof getTours>>["data"] = [];
   let apiError: string | null = null;
 
   try {
-    const tours = await getTours({ limit: 1, sort: "newest" });
-    tourTotal = tours.total;
+    const [destList, tourList] = await Promise.all([
+      getDestinations(),
+      getTours({ sort: "rating", limit: 4, page: 1 }),
+    ]);
+    destinations = destList
+      .sort((a, b) => b.tourCount - a.tourCount)
+      .slice(0, 4);
+    featuredTours = tourList.data;
   } catch (err) {
     apiError =
       err instanceof ApiClientError
@@ -25,78 +46,79 @@ export default async function Home() {
             Khám phá tour du lịch
           </h1>
           <p className="mt-3 text-lg text-text-secondary">
-            Tìm chuyến đi phù hợp — điểm đến, ngày khởi hành, mức giá.
+            Tìm chuyến đi mơ ước của bạn
           </p>
-          <form
-            action="/tours"
-            className="mx-auto mt-8 flex max-w-3xl flex-col gap-3 rounded-md bg-bg p-4 shadow-card sm:flex-row sm:items-end"
-          >
-            <label className="flex flex-1 flex-col gap-1 text-left text-sm">
-              <span className="font-medium text-text-secondary">Từ khóa</span>
-              <input
-                name="q"
-                type="search"
-                placeholder="Ví dụ: Hội An"
-                className="h-11 rounded-md border border-border px-3 text-text outline-none focus:border-primary"
-              />
-            </label>
-            <label className="flex flex-1 flex-col gap-1 text-left text-sm">
-              <span className="font-medium text-text-secondary">Điểm đến</span>
-              <input
-                name="destination"
-                type="text"
-                placeholder="da-nang"
-                className="h-11 rounded-md border border-border px-3 text-text outline-none focus:border-primary"
-              />
-            </label>
-            <button
-              type="submit"
-              className="h-11 shrink-0 rounded-md bg-accent px-6 text-sm font-semibold text-white hover:bg-accent-dark"
-            >
-              Tìm tour
-            </button>
-          </form>
+          {apiError ? (
+            <p className="mt-8 rounded-md border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
+              {apiError} — chạy backend tại{" "}
+              {process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080"}
+            </p>
+          ) : (
+            <HeroSearch destinations={destinations} />
+          )}
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {apiError ? (
-          <p className="rounded-md border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
-            API: {apiError} — chạy backend tại {process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080"}
-          </p>
-        ) : (
-          <p className="rounded-md border border-border bg-bg px-4 py-3 text-sm text-text-secondary">
-            API kết nối OK — <strong className="text-text">{tourTotal}</strong> tour trên BE.
-            Featured grids triển khai Day 07.
-          </p>
-        )}
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-        <h2 className="text-xl font-semibold text-text">Điểm đến nổi bật</h2>
-        <p className="mt-2 text-sm text-text-secondary">
-          Placeholder layout — data từ <code className="text-primary">GET /api/destinations</code> ở Day 07.
-        </p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {["Đà Nẵng", "Phú Quốc", "Sa Pa", "Nha Trang"].map((name) => (
-            <div
-              key={name}
-              className="rounded-md border border-border bg-bg p-4 shadow-card"
-            >
-              <div className="aspect-4/3 rounded-md bg-bg-section" />
-              <p className="mt-3 font-medium">{name}</p>
+      {!apiError && (
+        <>
+          <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="text-xl font-semibold text-text">Điểm đến nổi bật</h2>
+              <Link
+                href="/tours"
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Xem tất cả
+              </Link>
             </div>
-          ))}
-        </div>
-        <div className="mt-10 text-center">
-          <Link
-            href="/tours"
-            className="inline-flex h-11 items-center rounded-md bg-primary px-6 text-sm font-semibold text-white hover:bg-primary-dark"
-          >
-            Xem tất cả tour
-          </Link>
-        </div>
-      </section>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {destinations.map((destination) => (
+                <DestinationCard key={destination.slug} destination={destination} />
+              ))}
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="text-xl font-semibold text-text">Tour nổi bật</h2>
+              <Link
+                href="/tours?sort=rating"
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Xem thêm
+              </Link>
+            </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {featuredTours.map((tour) => (
+                <TourCard key={tour.id} tour={tour} />
+              ))}
+            </div>
+          </section>
+
+          <section className="border-t border-border bg-bg px-4 py-12 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl">
+              <h2 className="text-center text-xl font-semibold text-text">
+                Vì sao chọn TripGo
+              </h2>
+              <div className="mt-8 grid gap-6 sm:grid-cols-3">
+                {[
+                  { title: "Tour đa dạng", detail: "Hàng chục tour từ biển, núi, thành phố." },
+                  { title: "Giá minh bạch", detail: "Hiển thị giá và đánh giá từ khách thật." },
+                  { title: "Đặt tour nhanh", detail: "Tìm kiếm, chọn ngày và xác nhận đơn." },
+                ].map((item) => (
+                  <div
+                    key={item.title}
+                    className="rounded-md border border-border bg-bg-section p-6 text-center"
+                  >
+                    <p className="font-semibold text-primary">{item.title}</p>
+                    <p className="mt-2 text-sm text-text-secondary">{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }
